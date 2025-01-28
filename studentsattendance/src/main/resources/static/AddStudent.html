@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Student</title>
+    <link rel="stylesheet" href="style1.css">
+</head>
+<body>
+<div class="container">
+    <h1>Add New Student</h1>
+    <form id="addStudentForm">
+        <label for="name">Student Name:</label>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="rollNumber">Roll Number:</label>
+        <input type="text" id="rollNumber" name="rollNumber" required><br><br>
+
+        <label for="rollNumber">Mobile Number:</label>
+        <input type="text" id="mobile" name="mobile" required><br><br>
+
+        <button type="submit">Add</button>
+        <button type="reset" class="clear-btn">Clear</button>
+    </form>
+</div>
+
+
+<script>
+    document.getElementById('addStudentForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const studentData = {
+            name: document.getElementById('name').value,
+            rollNumber: document.getElementById('rollNumber').value,
+            mobile: document.getElementById('mobile').value
+        };
+
+        fetch('http://localhost:8080/api/students', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(studentData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert('Student added successfully!');
+            document.getElementById('addStudentForm').reset();
+        })
+        .catch(error => console.error('Error:', error));
+    });
+</script>
+</body>
+</html>

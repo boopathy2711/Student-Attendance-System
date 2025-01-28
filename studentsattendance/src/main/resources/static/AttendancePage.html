@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Sheet</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Attendance Sheet</h1>
+    <div class="filter-section">
+        <input type="date" id="dateFilter" onchange="loadAttendanceData()">
+    </div>
+    <div class="attendance-actions">
+        <a href="AddStudent.html" target="_blank" class="add-student-btn">Add Student</a>
+    </div>
+    <div class="attendance-list">
+        <table id="attendanceTable">
+            <thead>
+            <tr>
+                <th>S.No</th>
+                <th>Student Name</th>
+                <th>Roll No</th>
+                <th>Mobile</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <div class="attendance-summary">
+        <p>Total Strength: <span id="totalStrength">0</span></p>
+        <p>Total Present: <span id="totalPresent">0</span></p>
+        <p>Total Absent: <span id="totalAbsent">0</span></p>
+    </div>
+</div>
+<script>
+    function loadAttendanceData() {
+    const selectedDate = document.getElementById('dateFilter').value || new Date().toISOString().split('T')[0];
+
+    fetch(`http://localhost:8080/api/attendance?date=${selectedDate}`)
+        .then(response => response.json())
+        .then(data => {
+            // Filter by selected date if necessary
+            if (selectedDate) {
+                data = data.filter(attendance => attendance.date.startsWith(selectedDate));
+            }
+
+            // Sort data by roll number
+            data.sort((a, b) => a.student.rollNumber.localeCompare(b.student.rollNumber));
+
+            const tableBody = document.querySelector("#attendanceTable tbody");
+            tableBody.innerHTML = '';
+
+            let counter = 1;
+            let totalPresent = 0;
+            let totalAbsent = 0;
+
+            data.forEach(attendance => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${counter++}</td>
+                    <td>${attendance.student.name}</td>
+                    <td>${attendance.student.rollNumber}</td>
+                    <td>${attendance.student.mobile}</td>
+                    <td>${attendance.date}</td>
+                    <td>${attendance.status}</td>
+                    <td>
+                        <button class="update-btn present" onclick="updateAttendanceStatus(${attendance.id}, 'Present')">Present</button>
+                        <button class="update-btn absent" onclick="updateAttendanceStatus(${attendance.id}, 'Absent')">Absent</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+
+                if (attendance.status === 'Present') {
+                    totalPresent++;
+                } else if (attendance.status === 'Absent') {
+                    totalAbsent++;
+                }
+            });
+
+            const totalStrength = data.length;
+            document.getElementById('totalStrength').innerText = totalStrength;
+            document.getElementById('totalPresent').innerText = totalPresent;
+            document.getElementById('totalAbsent').innerText = totalAbsent;
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    window.onload = () => {
+        const today = new Date().toISOString().split('T')[0]; 
+        document.getElementById('dateFilter').value = today; 
+        loadAttendanceData();  
+    };
+// Update Status
+    function updateAttendanceStatus(attendanceId, status) {
+    const url = `http://localhost:8080/api/attendance/${attendanceId}`;
+    const updatedData = { status: status };
+
+    fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+    })
+        .then(response => {
+            if (response.ok) {
+                alert('Attendance updated successfully!');
+                loadAttendanceData();
+            } else {
+                alert('Failed to update attendance.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating attendance.');
+        });
+}
+</script>
+</body>
+</html>
